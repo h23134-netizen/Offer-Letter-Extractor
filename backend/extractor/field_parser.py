@@ -296,40 +296,48 @@ class FieldParser:
 
     def _extract_bonus(self, global_text: str, bonus_type: str):
         """
-        Extracts Joining or Retention bonus amounts from raw text paragraphs.
+        Extracts Joining or Retention bonus amounts with highly permissive proximity scanning.
         """
         clean_text = global_text.replace('\n', ' ')
         
-        # Pattern 1: [Type] Bonus... INR 100,000
-        pattern1 = rf'{bonus_type}\s*Bonus[^\d]+(?:INR|Rs\.?)\s*([\d,]+)'
-        # Pattern 2: INR 100,000 as a [Type] Bonus
-        pattern2 = rf'(?:INR|Rs\.?)\s*([\d,]+)[^\d]+?{bonus_type}\s*Bonus'
+        # Pattern 1: [Type] Bonus ......... INR 100000
+        # We allow up to 150 characters of ANYTHING between the Bonus keyword and the Currency indicator
+        pattern1 = rf'{bonus_type}\s*Bonus(?:.{{0,150}}?)(?:INR|Rs\.?|₹|Rs)\s*([\d,]{{4,}})'
         
-        match = re.search(pattern1, clean_text, re.IGNORECASE)
-        if not match:
-            match = re.search(pattern2, clean_text, re.IGNORECASE)
-            
-        if match:
-            raw_val = match.group(1).replace(',', '').strip()
-            try:
-                return float(raw_val), 0.9, "text_proximity"
-            except ValueError:
-                pass
-                
+        # Pattern 2: INR 100000 ......... [Type] Bonus
+        pattern2 = rf'(?:INR|Rs\.?|₹|Rs)\s*([\d,]{{4,}})(?:.{{0,150}}?){bonus_type}\s*Bonus'
+        
+        # Pattern 3: Fallback without Currency just in case they wrote "100000 as a Retention Bonus"
+        pattern3 = rf'([\d,]{{4,}})(?:.{{0,150}}?){bonus_type}\s*Bonus'
+        
+        for pat in [pattern1, pattern2, pattern3]:
+            match = re.search(pat, clean_text, re.IGNORECASE)
+            if match:
+                raw_val = match.group(1).replace(',', '').strip()
+                try:
+                    return float(raw_val), 0.8, "text_proximity"
+                except ValueError:
+                    pass
+                    
         return None, 0.0, "missing"
 
     def _extract_esop(self, global_text: str):
         """
-        Extracts ESOP program value from raw text paragraphs.
+        Extracts ESOP program value with highly permissive proximity scanning.
         """
         clean_text = global_text.replace('\n', ' ')
         
-        # Look for ESOPs... INR 500,000
-        match = re.search(r'ESOP[^\d]{1,100}?(?:INR|Rs\.?)\s*([\d,]+)', clean_text, re.IGNORECASE)
-        if match:
-            raw_val = match.group(1).replace(',', '').strip()
-            try:
-                return float(raw_val), 0.8, "text_proximity"
-            except ValueError:
-                pass
+        # Allow up to 200 characters between ESOP and the currency value
+        pattern1 = r'ESOP(?:.{0,200}?)(?:INR|Rs\.?|₹|Rs)\s*([\d,]{4,})'
+        pattern2 = r'ESAR(?:.{0,200}?)(?:INR|Rs\.?|₹|Rs)\s*([\d,]{4,})'
+        
+        for pat in [pattern1, pattern2]:
+            match = re.search(pat, clean_text, re.IGNORECASE)
+            if match:
+                raw_val = match.group(1).replace(',', '').strip()
+                try:
+                    return float(raw_val), 0.8, "text_proximity"
+                except ValueError:
+                    pass
+                    
         return None, 0.0, "missing"

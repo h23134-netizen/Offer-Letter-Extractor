@@ -218,39 +218,35 @@ class FieldParser:
         
         for i, line in enumerate(lines):
             # Department
-            match0 = re.search(r'^Department\s*[:\-]*\s*(.+)', line, re.IGNORECASE)
+            match0 = re.search(r'Department\s*[:\-]*\s*(.+?)(?=\s+(?:Sub-Department|Competency|Band|Grade)|$)', line, re.IGNORECASE)
             if match0 and not dept:
                 dept = match0.group(1).strip()
-            elif re.search(r'^Department\s*[:\-]*$', line, re.IGNORECASE) and not dept:
+            elif re.search(r'Department\s*[:\-]*$', line, re.IGNORECASE) and not dept:
                 if i + 1 < len(lines):
                     dept = lines[i+1].strip()
 
             # 1. Competency
             match1 = re.search(r'Competency\s*[:\-]*\s*(.+?)(?=\s+(?:Band|Grade)|$)', line, re.IGNORECASE)
-            if not match1:
-                 # Fallback if they are on separate lines
-                 match1 = re.search(r'^Competency\s+(.+)', line, re.IGNORECASE)
-                 
             if match1 and not comp:
                 comp = match1.group(1).strip()
                 if comp == "": comp = None
-            elif re.search(r'^Competency\s*[:\-]*$', line, re.IGNORECASE) and not comp:
+            elif re.search(r'Competency\s*[:\-]*$', line, re.IGNORECASE) and not comp:
                 if i + 1 < len(lines):
                     comp = lines[i+1].strip()
                 
             # 2. Band
-            match2 = re.search(r'^Band\s*[:\-]*\s*([A-Za-z0-9\-\.]+)', line, re.IGNORECASE)
+            match2 = re.search(r'Band\s*[:\-]*\s*([A-Za-z0-9\-\.]+)', line, re.IGNORECASE)
             if match2 and not band:
                 band = match2.group(1).strip()
-            elif re.search(r'^Band\s*[:\-]*$', line, re.IGNORECASE) and not band:
+            elif re.search(r'Band\s*[:\-]*$', line, re.IGNORECASE) and not band:
                 if i + 1 < len(lines):
                     band = lines[i+1].strip()
                 
             # 3. Grade
-            match3 = re.search(r'^Grade\s*[:\-]*\s*([A-Za-z0-9\-\.]+)', line, re.IGNORECASE)
+            match3 = re.search(r'Grade\s*[:\-]*\s*([A-Za-z0-9\-\.]+)', line, re.IGNORECASE)
             if match3 and not grade:
                 grade = match3.group(1).strip()
-            elif re.search(r'^Grade\s*[:\-]*$', line, re.IGNORECASE) and not grade:
+            elif re.search(r'Grade\s*[:\-]*$', line, re.IGNORECASE) and not grade:
                 if i + 1 < len(lines):
                     grade = lines[i+1].strip()
                 

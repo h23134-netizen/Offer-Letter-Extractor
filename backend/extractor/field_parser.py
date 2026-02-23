@@ -214,41 +214,28 @@ class FieldParser:
         if not schedule_text:
             return None, None, None, None, 0.0, "missing"
             
-        lines = [l.strip() for l in schedule_text.split('\n') if l.strip()]
+        # Clean up chaotic spacing from flattened PDF tables and process as a single global block
+        clean_text = schedule_text.replace('\n', ' ')
         
-        for i, line in enumerate(lines):
-            # Department
-            match0 = re.search(r'Department\s*[:\-]*\s*(.+?)(?=\s+(?:Sub-Department|Competency|Band|Grade)|$)', line, re.IGNORECASE)
-            if match0 and not dept:
-                dept = match0.group(1).strip()
-            elif re.search(r'Department\s*[:\-]*$', line, re.IGNORECASE) and not dept:
-                if i + 1 < len(lines):
-                    dept = lines[i+1].strip()
+        # Department
+        match0 = re.search(r'Department\s*[:\-]?\s*([a-zA-Z\s]+?)(?=\s+(?:Sub-Department|Competency|Band|Grade|Name|$))', clean_text, re.IGNORECASE)
+        if match0:
+            dept = match0.group(1).strip()
 
-            # 1. Competency
-            match1 = re.search(r'Competency\s*[:\-]*\s*(.+?)(?=\s+(?:Band|Grade)|$)', line, re.IGNORECASE)
-            if match1 and not comp:
-                comp = match1.group(1).strip()
-                if comp == "": comp = None
-            elif re.search(r'Competency\s*[:\-]*$', line, re.IGNORECASE) and not comp:
-                if i + 1 < len(lines):
-                    comp = lines[i+1].strip()
-                
-            # 2. Band
-            match2 = re.search(r'Band\s*[:\-]*\s*([A-Za-z0-9\-\.]+)', line, re.IGNORECASE)
-            if match2 and not band:
-                band = match2.group(1).strip()
-            elif re.search(r'Band\s*[:\-]*$', line, re.IGNORECASE) and not band:
-                if i + 1 < len(lines):
-                    band = lines[i+1].strip()
-                
-            # 3. Grade
-            match3 = re.search(r'Grade\s*[:\-]*\s*([A-Za-z0-9\-\.]+)', line, re.IGNORECASE)
-            if match3 and not grade:
-                grade = match3.group(1).strip()
-            elif re.search(r'Grade\s*[:\-]*$', line, re.IGNORECASE) and not grade:
-                if i + 1 < len(lines):
-                    grade = lines[i+1].strip()
+        # 1. Competency
+        match1 = re.search(r'Competency\s*[:\-]?\s*(.+?)(?=\s+(?:Band|Grade|Name|$))', clean_text, re.IGNORECASE)
+        if match1:
+            comp = match1.group(1).strip()
+            
+        # 2. Band
+        match2 = re.search(r'Band\s*[:\-]?\s*([A-Za-z0-9\-\.]+)', clean_text, re.IGNORECASE)
+        if match2:
+            band = match2.group(1).strip()
+            
+        # 3. Grade
+        match3 = re.search(r'Grade\s*[:\-]?\s*([A-Za-z0-9\-\.]+)', clean_text, re.IGNORECASE)
+        if match3:
+            grade = match3.group(1).strip()
                 
         if dept or comp or band or grade:
             # User requested override: Always derive the Band explicitly from the Grade
@@ -257,6 +244,7 @@ class FieldParser:
                 band = str(grade).split('.')[0]
                 
             return dept, comp, band, grade, 1.0, "scheduleA"
+            
         return None, None, None, None, 0.0, "missing"
 
     def _extract_salary_table(self, table_text: str):

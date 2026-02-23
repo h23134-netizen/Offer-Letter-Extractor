@@ -125,3 +125,45 @@ def test_bonus_extraction():
     assert fields["bonus_retention_inr"] == 100000
     assert fields["esop_amount_inr"] == 500000
     assert fields["bonus_joining_inr"] == 50000
+
+NEW_LAYOUT_TEXT = """
+OFFER LETTER
+Dear Debayan Debnath,
+We are pleased to offer you the position.
+
+Compensation & Benefits
+a) You will be entitled to be paid an all-inclusive aggregate compensation of INR 14,00,000 per annum.
+
+Schedule A
+Name
+Debayan Debnath
+Designation
+Management Trainee
+Entity
+GFPL
+Business Unit
+Enabling Functions
+Department
+Human Resources
+Sub-Department
+Generalist
+Competency
+Shared (HR - Generalist)
+Band
+2
+Grade
+2.2
+"""
+def test_new_layout_extraction():
+    extractor = TextExtractor()
+    parser = FieldParser()
+    sections = extractor.split_sections(NEW_LAYOUT_TEXT)
+    parsed = parser.parse(sections)
+    fields = parsed["fields"]
+    
+    assert fields["comp_total_annual_inr"] == 1400000
+    assert fields["scheduleA_department"] == "Human Resources"
+    assert fields["scheduleA_competency"] == "Shared (HR - Generalist)"
+    assert fields["scheduleA_band"] == "2"
+    assert fields["scheduleA_grade"] == "2.2"
+

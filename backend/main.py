@@ -205,6 +205,7 @@ async def export_xlsx(data: Dict[str, Any] = Body(...)):
             "Joining Bonus (INR)": fields.get("bonus_joining_inr"),
             "Retention Bonus (INR)": fields.get("bonus_retention_inr"),
             "ESOP Amount (INR)": fields.get("esop_amount_inr"),
+            "Department": fields.get("scheduleA_department"),
             "BYOD": fields.get("byod_clause"),
             "Competency": fields.get("scheduleA_competency"),
             "Band": fields.get("scheduleA_band"),

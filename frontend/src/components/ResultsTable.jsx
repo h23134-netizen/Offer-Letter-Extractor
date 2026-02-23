@@ -77,6 +77,7 @@ export const ResultsTable = ({ results, onUpdateResult }) => {
         { key: 'bonus_retention_inr', label: 'Retention Bonus' },
         { key: 'esop_amount_inr', label: 'ESOP Amount' },
         { key: 'byod_clause', label: 'BYOD' },
+        { key: 'scheduleA_department', label: 'Department' },
         { key: 'scheduleA_competency', label: 'Competency' },
         { key: 'scheduleA_band', label: 'Band' },
         { key: 'scheduleA_grade', label: 'Grade' },

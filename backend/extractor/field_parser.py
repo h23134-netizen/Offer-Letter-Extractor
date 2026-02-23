@@ -20,6 +20,7 @@ class FieldParser:
             "bonus_retention_inr": None,
             "esop_amount_inr": None,
             "byod_clause": "No",
+            "scheduleA_department": None,
             "scheduleA_competency": None,
             "scheduleA_band": None,
             "scheduleA_grade": None,
@@ -94,14 +95,17 @@ class FieldParser:
                 confidence_scores["byod_clause"] = 1.0
                 extraction_methods["byod_clause"] = "binary_absence"
             
-        # 6. Schedule A Competency, Band, Grade
-        comp, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(scheduleA_text)
+        # 6. Schedule A Department, Competency, Band, Grade
+        dept, comp, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(scheduleA_text)
+        results["scheduleA_department"] = dept
         results["scheduleA_competency"] = comp
         results["scheduleA_band"] = band
         results["scheduleA_grade"] = grade
+        confidence_scores["scheduleA_department"] = sch_conf
         confidence_scores["scheduleA_competency"] = sch_conf
         confidence_scores["scheduleA_band"] = sch_conf
         confidence_scores["scheduleA_grade"] = sch_conf
+        extraction_methods["scheduleA_department"] = sch_meth
         extraction_methods["scheduleA_competency"] = sch_meth
         extraction_methods["scheduleA_band"] = sch_meth
         extraction_methods["scheduleA_grade"] = sch_meth
@@ -188,7 +192,7 @@ class FieldParser:
         return date_str
 
     def _extract_compensation(self, compensation_text: str, global_text: str):
-        pattern = r'total annual compensation of\s*(?:INR|Rs\.?)\s*([\d,]+)\s*per annum'
+        pattern = r'(?:total annual|aggregate)\s+compensation of\s*(?:INR|Rs\.?|₹|Rs)\s*([\d,]+)\s*per annum'
         if compensation_text:
             match = re.search(pattern, compensation_text, re.IGNORECASE)
             if match:
@@ -206,13 +210,21 @@ class FieldParser:
         return None, None, 0.0, "missing"
 
     def _extract_schedule_a_fields(self, schedule_text: str):
-        comp, band, grade = None, None, None
+        dept, comp, band, grade = None, None, None, None
         if not schedule_text:
-            return None, None, None, 0.0, "missing"
+            return None, None, None, None, 0.0, "missing"
             
         lines = [l.strip() for l in schedule_text.split('\n') if l.strip()]
         
         for i, line in enumerate(lines):
+            # Department
+            match0 = re.search(r'^Department\s*[:\-]*\s*(.+)', line, re.IGNORECASE)
+            if match0 and not dept:
+                dept = match0.group(1).strip()
+            elif re.search(r'^Department\s*[:\-]*$', line, re.IGNORECASE) and not dept:
+                if i + 1 < len(lines):
+                    dept = lines[i+1].strip()
+
             # 1. Competency
             match1 = re.search(r'Competency\s*[:\-]*\s*(.+?)(?=\s+(?:Band|Grade)|$)', line, re.IGNORECASE)
             if not match1:
@@ -221,12 +233,13 @@ class FieldParser:
                  
             if match1 and not comp:
                 comp = match1.group(1).strip()
+                if comp == "": comp = None
             elif re.search(r'^Competency\s*[:\-]*$', line, re.IGNORECASE) and not comp:
                 if i + 1 < len(lines):
                     comp = lines[i+1].strip()
                 
             # 2. Band
-            match2 = re.search(r'Band\s*[:\-]*\s*([A-Za-z0-9\-\.]+)', line, re.IGNORECASE)
+            match2 = re.search(r'^Band\s*[:\-]*\s*([A-Za-z0-9\-\.]+)', line, re.IGNORECASE)
             if match2 and not band:
                 band = match2.group(1).strip()
             elif re.search(r'^Band\s*[:\-]*$', line, re.IGNORECASE) and not band:
@@ -234,21 +247,21 @@ class FieldParser:
                     band = lines[i+1].strip()
                 
             # 3. Grade
-            match3 = re.search(r'Grade\s*[:\-]*\s*([A-Za-z0-9\-\.]+)', line, re.IGNORECASE)
+            match3 = re.search(r'^Grade\s*[:\-]*\s*([A-Za-z0-9\-\.]+)', line, re.IGNORECASE)
             if match3 and not grade:
                 grade = match3.group(1).strip()
             elif re.search(r'^Grade\s*[:\-]*$', line, re.IGNORECASE) and not grade:
                 if i + 1 < len(lines):
                     grade = lines[i+1].strip()
                 
-        if comp or band or grade:
+        if dept or comp or band or grade:
             # User requested override: Always derive the Band explicitly from the Grade
             # e.g., Grade "2.1" -> Band "2"
             if grade:
                 band = str(grade).split('.')[0]
                 
-            return comp, band, grade, 1.0, "scheduleA"
-        return None, None, None, 0.0, "missing"
+            return dept, comp, band, grade, 1.0, "scheduleA"
+        return None, None, None, None, 0.0, "missing"
 
     def _extract_salary_table(self, table_text: str):
         rows = []

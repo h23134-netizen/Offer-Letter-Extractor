@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_Base = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_Base = 'https://ddebnath42-offer-letter-extractor.hf.space';
 
 const api = axios.create({
   baseURL: API_Base,
@@ -44,7 +44,7 @@ export const exportCSV = async (data) => {
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `offer_extraction_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute('download', `offer_extraction_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -62,7 +62,7 @@ export const exportXLSX = async (data) => {
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `offer_extraction_${new Date().toISOString().slice(0,10)}.xlsx`);
+    link.setAttribute('download', `offer_extraction_${new Date().toISOString().slice(0, 10)}.xlsx`);
     document.body.appendChild(link);
     link.click();
     link.remove();

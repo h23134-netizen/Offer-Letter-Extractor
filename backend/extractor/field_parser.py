@@ -16,6 +16,9 @@ class FieldParser:
             "date_of_joining_norm": None,
             "comp_total_annual_raw": None,
             "comp_total_annual_inr": None,
+            "bonus_joining_inr": None,
+            "bonus_retention_inr": None,
+            "esop_amount_inr": None,
             "byod_clause": "No",
             "scheduleA_competency": None,
             "scheduleA_band": None,
@@ -111,6 +114,23 @@ class FieldParser:
         confidence_scores["salary_table_totals"] = tab_conf
         extraction_methods["salary_table_rows"] = tab_meth
         extraction_methods["salary_table_totals"] = tab_meth
+
+        # 8. Bonuses (Joining and Retention)
+        jb_inr, jb_conf, jb_meth = self._extract_bonus(global_text, "Joining")
+        results["bonus_joining_inr"] = jb_inr
+        confidence_scores["bonus_joining_inr"] = jb_conf
+        extraction_methods["bonus_joining_inr"] = jb_meth
+
+        rb_inr, rb_conf, rb_meth = self._extract_bonus(global_text, "Retention")
+        results["bonus_retention_inr"] = rb_inr
+        confidence_scores["bonus_retention_inr"] = rb_conf
+        extraction_methods["bonus_retention_inr"] = rb_meth
+
+        # 9. ESOP Amount
+        esop_inr, esop_conf, esop_meth = self._extract_esop(global_text)
+        results["esop_amount_inr"] = esop_inr
+        confidence_scores["esop_amount_inr"] = esop_conf
+        extraction_methods["esop_amount_inr"] = esop_meth
 
         return {
             "fields": results,
@@ -273,3 +293,43 @@ class FieldParser:
         if rows:
             return rows, totals, 1.0, "salary_table"
         return [], {}, 0.0, "missing"
+
+    def _extract_bonus(self, global_text: str, bonus_type: str):
+        """
+        Extracts Joining or Retention bonus amounts from raw text paragraphs.
+        """
+        clean_text = global_text.replace('\n', ' ')
+        
+        # Pattern 1: [Type] Bonus... INR 100,000
+        pattern1 = rf'{bonus_type}\s*Bonus[^\d]+(?:INR|Rs\.?)\s*([\d,]+)'
+        # Pattern 2: INR 100,000 as a [Type] Bonus
+        pattern2 = rf'(?:INR|Rs\.?)\s*([\d,]+)[^\d]+?{bonus_type}\s*Bonus'
+        
+        match = re.search(pattern1, clean_text, re.IGNORECASE)
+        if not match:
+            match = re.search(pattern2, clean_text, re.IGNORECASE)
+            
+        if match:
+            raw_val = match.group(1).replace(',', '').strip()
+            try:
+                return float(raw_val), 0.9, "text_proximity"
+            except ValueError:
+                pass
+                
+        return None, 0.0, "missing"
+
+    def _extract_esop(self, global_text: str):
+        """
+        Extracts ESOP program value from raw text paragraphs.
+        """
+        clean_text = global_text.replace('\n', ' ')
+        
+        # Look for ESOPs... INR 500,000
+        match = re.search(r'ESOP[^\d]{1,100}?(?:INR|Rs\.?)\s*([\d,]+)', clean_text, re.IGNORECASE)
+        if match:
+            raw_val = match.group(1).replace(',', '').strip()
+            try:
+                return float(raw_val), 0.8, "text_proximity"
+            except ValueError:
+                pass
+        return None, 0.0, "missing"

@@ -97,3 +97,31 @@ def test_sales_field_template():
     assert fields["byod_clause"] == "Yes"
     
     assert fields["salary_table_totals"]["gross_salary"] == 300000
+
+BONUS_TEMPLATE_TEXT = """
+OFFER LETTER
+Dear Sam Smith,
+We are pleased to offer you the position of Customer Support Executive at Gurugram, Haryana, India.
+
+Compensation & Benefits
+Your total annual compensation of INR 4,50,000 per annum.
+
+Retention Bonus:
+In addition to the above, you will be entitled to an INR 100000 as a Retention Bonus, which will be paid upon completing 12 months.
+
+ESOP:
+You are also entitled to the ESOP program and will be offered ESOPs worth total of INR 500000 at Fair Market Value.
+
+Joining Bonus:
+You will receive Rs 50,000 as a Joining Bonus in your first paycheck.
+"""
+def test_bonus_extraction():
+    extractor = TextExtractor()
+    parser = FieldParser()
+    sections = extractor.split_sections(BONUS_TEMPLATE_TEXT)
+    parsed = parser.parse(sections)
+    fields = parsed["fields"]
+    
+    assert fields["bonus_retention_inr"] == 100000
+    assert fields["esop_amount_inr"] == 500000
+    assert fields["bonus_joining_inr"] == 50000

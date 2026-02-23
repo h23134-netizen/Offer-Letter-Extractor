@@ -1,35 +1,16 @@
-# Offer Letter Data Extractor
+---
+title: Offer Letter Extractor API
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_file: app.py
+pinned: false
+python_version: 3.10
+---
 
-A production-ready web application to bulk extract structured data from Offer Letters (DOCX & PDF).
+# Offer Letter Data Extractor API
 
-## Features
-- **Batch Processing**: Upload 20-100 files at once.
-- **Format Support**: Native DOCX and text-based PDF parsing.
-- **Smart Extraction**: Hybrid anchor-based + Regex logic.
-- **Export**: Download results as CSV or Excel.
-- **Privacy**: In-memory processing, no permanent storage.
+This is the FastAPI backend serving the Offer Letter Extractor. It utilizes PyMuPDF and Regex to dynamically parse uploaded PDFs into highly structured JSON formats.
 
-## Tech Stack
-- **Backend**: FastAPI, Python 3.11, PyMuPDF, python-docx, Pandas.
-- **Frontend**: React (Vite), Tailwind CSS, Framer Motion.
-
-## Quick Start
-
-### Backend
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open `http://localhost:5173` (or the port shown in terminal).
-
-## Deployment
-See `deployment_guide.md`.
+This space uses a custom `Dockerfile` to launch `uvicorn` on port 7860.

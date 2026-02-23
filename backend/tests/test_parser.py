@@ -15,7 +15,7 @@ Your total annual compensation of INR 4,50,000 per annum.
 
 Schedule A
 Designation: Customer Support Executive
-Competency Customer Excellence - CX
+Sub-Department: Customer Excellence - CX
 Band: 2
 Grade: 2.1
 
@@ -46,7 +46,7 @@ You are required to bring your own device.
 
 Schedule A
 Designation: Field Sales Manager
-Competency Sales
+Sub-Department: Sales
 Band: S1
 Grade: G3
 
@@ -72,7 +72,7 @@ def test_support_template():
     assert fields["date_of_joining_norm"] == "2025-05-15"
     assert fields["comp_total_annual_inr"] == 450000
     assert fields["byod_clause"] == "No"
-    assert fields["scheduleA_competency"] == "Customer Excellence - CX"
+    assert fields["scheduleA_sub_department"] == "Customer Excellence - CX"
     assert fields["scheduleA_band"] == "2"
     assert fields["scheduleA_grade"] == "2.1"
     
@@ -163,7 +163,7 @@ def test_new_layout_extraction():
     
     assert fields["comp_total_annual_inr"] == 1400000
     assert fields["scheduleA_department"] == "Human Resources"
-    assert fields["scheduleA_competency"] == "Shared (HR - Generalist)"
+    assert fields["scheduleA_sub_department"] == "Generalist"
     assert fields["scheduleA_band"] == "2"
     assert fields["scheduleA_grade"] == "2.2"
 

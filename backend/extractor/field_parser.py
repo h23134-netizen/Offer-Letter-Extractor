@@ -21,7 +21,7 @@ class FieldParser:
             "esop_amount_inr": None,
             "byod_clause": "No",
             "scheduleA_department": None,
-            "scheduleA_competency": None,
+            "scheduleA_sub_department": None,
             "scheduleA_band": None,
             "scheduleA_grade": None,
             "salary_table_rows": [],
@@ -95,25 +95,25 @@ class FieldParser:
                 confidence_scores["byod_clause"] = 1.0
                 extraction_methods["byod_clause"] = "binary_absence"
             
-        # 6. Schedule A Department, Competency, Band, Grade
-        dept, comp, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(scheduleA_text)
+        # 6. Schedule A Department, Sub-Department, Band, Grade
+        dept, subdept, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(scheduleA_text)
         
         # Fallback to scanning the global document if the 'Schedule A' section was completely missed 
         # by the text extractor's header-boundary engine
-        if not (dept or comp or band or grade):
-             dept, comp, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(global_text)
+        if not (dept or subdept or band or grade):
+             dept, subdept, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(global_text)
              sch_meth = "global_fallback" if sch_meth != "missing" else "missing"
              
         results["scheduleA_department"] = dept
-        results["scheduleA_competency"] = comp
+        results["scheduleA_sub_department"] = subdept
         results["scheduleA_band"] = band
         results["scheduleA_grade"] = grade
         confidence_scores["scheduleA_department"] = sch_conf
-        confidence_scores["scheduleA_competency"] = sch_conf
+        confidence_scores["scheduleA_sub_department"] = sch_conf
         confidence_scores["scheduleA_band"] = sch_conf
         confidence_scores["scheduleA_grade"] = sch_conf
         extraction_methods["scheduleA_department"] = sch_meth
-        extraction_methods["scheduleA_competency"] = sch_meth
+        extraction_methods["scheduleA_sub_department"] = sch_meth
         extraction_methods["scheduleA_band"] = sch_meth
         extraction_methods["scheduleA_grade"] = sch_meth
         
@@ -217,7 +217,7 @@ class FieldParser:
         return None, None, 0.0, "missing"
 
     def _extract_schedule_a_fields(self, schedule_text: str):
-        dept, comp, band, grade = None, None, None, None
+        dept, subdept, band, grade = None, None, None, None
         if not schedule_text:
             return None, None, None, None, 0.0, "missing"
             
@@ -230,10 +230,10 @@ class FieldParser:
         if match0:
             dept = match0.group(1).strip()
 
-        # 1. Competency
-        match1 = re.search(r'Competency\s*[:\-]?\s*(.{1,100}?)(?=\s+(?:Band|Grade|Name|$))', clean_text, re.IGNORECASE)
+        # 1. Sub-Department
+        match1 = re.search(r'Sub\s*[-]*\s*Department\s*[:\-]?\s*(.{1,100}?)(?=\s+(?:Competency|Band|Grade|Name|$))', clean_text, re.IGNORECASE)
         if match1:
-            comp = match1.group(1).strip()
+            subdept = match1.group(1).strip()
             
         # 2. Band
         # Strictly enforce Uppercase or Numeric variables to reject lowercase global narrative strings (like "you")
@@ -246,13 +246,13 @@ class FieldParser:
         if match3:
             grade = match3.group(1).strip()
                 
-        if dept or comp or band or grade:
+        if dept or subdept or band or grade:
             # User requested override: Always derive the Band explicitly from the Grade
             # e.g., Grade "2.1" -> Band "2"
             if grade:
                 band = str(grade).split('.')[0]
                 
-            return dept, comp, band, grade, 1.0, "scheduleA"
+            return dept, subdept, band, grade, 1.0, "scheduleA"
             
         return None, None, None, None, 0.0, "missing"
 

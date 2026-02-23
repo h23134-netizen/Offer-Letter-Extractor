@@ -97,6 +97,13 @@ class FieldParser:
             
         # 6. Schedule A Department, Competency, Band, Grade
         dept, comp, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(scheduleA_text)
+        
+        # Fallback to scanning the global document if the 'Schedule A' section was completely missed 
+        # by the text extractor's header-boundary engine
+        if not (dept or comp or band or grade):
+             dept, comp, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(global_text)
+             sch_meth = "global_fallback" if sch_meth != "missing" else "missing"
+             
         results["scheduleA_department"] = dept
         results["scheduleA_competency"] = comp
         results["scheduleA_band"] = band
@@ -218,12 +225,13 @@ class FieldParser:
         clean_text = schedule_text.replace('\n', ' ')
         
         # Department
-        match0 = re.search(r'Department\s*[:\-]?\s*([a-zA-Z\s]+?)(?=\s+(?:Sub-Department|Competency|Band|Grade|Name|$))', clean_text, re.IGNORECASE)
+        # Use (.{1,100}?) to prevent capturing runaway text if the lookahead keyword is too far away
+        match0 = re.search(r'Department\s*[:\-]?\s*(.{1,100}?)(?=\s+(?:Sub-Department|Competency|Band|Grade|Name|$))', clean_text, re.IGNORECASE)
         if match0:
             dept = match0.group(1).strip()
 
         # 1. Competency
-        match1 = re.search(r'Competency\s*[:\-]?\s*(.+?)(?=\s+(?:Band|Grade|Name|$))', clean_text, re.IGNORECASE)
+        match1 = re.search(r'Competency\s*[:\-]?\s*(.{1,100}?)(?=\s+(?:Band|Grade|Name|$))', clean_text, re.IGNORECASE)
         if match1:
             comp = match1.group(1).strip()
             

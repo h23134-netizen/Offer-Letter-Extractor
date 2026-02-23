@@ -31,8 +31,9 @@ class TextExtractor:
         
         found_sections = []
         for header, key in header_mapping.items():
-            # Find the header case-insensitively
-            for match in re.finditer(re.escape(header), full_text, re.IGNORECASE):
+            # Find the header case-insensitively, allowing varied whitespace and newlines between words
+            pattern = re.escape(header).replace(r'\ ', r'\s+')
+            for match in re.finditer(pattern, full_text, re.IGNORECASE):
                 found_sections.append((match.start(), key))
                 break  # Take the first occurrence
                 

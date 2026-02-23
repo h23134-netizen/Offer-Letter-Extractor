@@ -226,7 +226,7 @@ class FieldParser:
         
         # Department
         # Use (.{1,100}?) to prevent capturing runaway text if the lookahead keyword is too far away
-        match0 = re.search(r'Department\s*[:\-]?\s*(.{1,100}?)(?=\s+(?:Sub-Department|Competency|Band|Grade|Name|$))', clean_text, re.IGNORECASE)
+        match0 = re.search(r'Department\s*[:\-]?\s*(.{1,100}?)(?=\s+(?:Sub\s*[-]*\s*Department|Competency|Band|Grade|Name|$))', clean_text, re.IGNORECASE)
         if match0:
             dept = match0.group(1).strip()
 
@@ -236,12 +236,13 @@ class FieldParser:
             comp = match1.group(1).strip()
             
         # 2. Band
-        match2 = re.search(r'Band\s*[:\-]?\s*([A-Za-z0-9\-\.]+)', clean_text, re.IGNORECASE)
+        # Strictly enforce Uppercase or Numeric variables to reject lowercase global narrative strings (like "you")
+        match2 = re.search(r'\bBand\s*[:\-]?\s*([0-9A-Z\.\-]+)\b', clean_text)
         if match2:
             band = match2.group(1).strip()
             
         # 3. Grade
-        match3 = re.search(r'Grade\s*[:\-]?\s*([A-Za-z0-9\-\.]+)', clean_text, re.IGNORECASE)
+        match3 = re.search(r'\bGrade\s*[:\-]?\s*([0-9A-Z\.\-]+)\b', clean_text)
         if match3:
             grade = match3.group(1).strip()
                 

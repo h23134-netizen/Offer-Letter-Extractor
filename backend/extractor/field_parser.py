@@ -20,6 +20,8 @@ class FieldParser:
             "bonus_retention_inr": None,
             "esop_amount_inr": None,
             "byod_clause": "No",
+            "scheduleA_name": None,
+            "scheduleA_entity": None,
             "scheduleA_department": None,
             "scheduleA_sub_department": None,
             "scheduleA_band": None,
@@ -95,23 +97,31 @@ class FieldParser:
                 confidence_scores["byod_clause"] = 1.0
                 extraction_methods["byod_clause"] = "binary_absence"
             
-        # 6. Schedule A Department, Sub-Department, Band, Grade
-        dept, subdept, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(scheduleA_text)
+        # 6. Schedule A Name, Entity, Department, Sub-Department, Band, Grade
+        name, entity, dept, subdept, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(scheduleA_text)
         
         # Fallback to scanning the global document if the 'Schedule A' section was completely missed 
         # by the text extractor's header-boundary engine
-        if not (dept or subdept or band or grade):
-             dept, subdept, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(global_text)
+        if not (name or entity or dept or subdept or band or grade):
+             name, entity, dept, subdept, band, grade, sch_conf, sch_meth = self._extract_schedule_a_fields(global_text)
              sch_meth = "global_fallback" if sch_meth != "missing" else "missing"
              
+        results["scheduleA_name"] = name
+        results["scheduleA_entity"] = entity
         results["scheduleA_department"] = dept
         results["scheduleA_sub_department"] = subdept
         results["scheduleA_band"] = band
         results["scheduleA_grade"] = grade
+        
+        confidence_scores["scheduleA_name"] = sch_conf
+        confidence_scores["scheduleA_entity"] = sch_conf
         confidence_scores["scheduleA_department"] = sch_conf
         confidence_scores["scheduleA_sub_department"] = sch_conf
         confidence_scores["scheduleA_band"] = sch_conf
         confidence_scores["scheduleA_grade"] = sch_conf
+        
+        extraction_methods["scheduleA_name"] = sch_meth
+        extraction_methods["scheduleA_entity"] = sch_meth
         extraction_methods["scheduleA_department"] = sch_meth
         extraction_methods["scheduleA_sub_department"] = sch_meth
         extraction_methods["scheduleA_band"] = sch_meth
@@ -217,13 +227,23 @@ class FieldParser:
         return None, None, 0.0, "missing"
 
     def _extract_schedule_a_fields(self, schedule_text: str):
-        dept, subdept, band, grade = None, None, None, None
+        name, entity, dept, subdept, band, grade = None, None, None, None, None, None
         if not schedule_text:
-            return None, None, None, None, 0.0, "missing"
+            return None, None, None, None, None, None, 0.0, "missing"
             
         # Clean up chaotic spacing from flattened PDF tables and process as a single global block
         clean_text = schedule_text.replace('\n', ' ')
         
+        # Name
+        match_name = re.search(r'Name\s*[:\-]?\s*(.{1,100}?)(?=\s+(?:Designation|Entity|Business\s*Unit|Department|Sub\s*[-]*\s*Department|Competency|Band|Grade|$))', clean_text, re.IGNORECASE)
+        if match_name:
+            name = match_name.group(1).strip()
+            
+        # Entity
+        match_entity = re.search(r'Entity\s*[:\-]?\s*(.{1,100}?)(?=\s+(?:Business\s*Unit|Department|Sub\s*[-]*\s*Department|Competency|Band|Grade|$))', clean_text, re.IGNORECASE)
+        if match_entity:
+            entity = match_entity.group(1).strip()
+
         # Department
         # Use (.{1,100}?) to prevent capturing runaway text if the lookahead keyword is too far away
         match0 = re.search(r'Department\s*[:\-]?\s*(.{1,100}?)(?=\s+(?:Sub\s*[-]*\s*Department|Competency|Band|Grade|Name|$))', clean_text, re.IGNORECASE)
@@ -246,15 +266,15 @@ class FieldParser:
         if match3:
             grade = match3.group(1).strip()
                 
-        if dept or subdept or band or grade:
+        if name or entity or dept or subdept or band or grade:
             # User requested override: Always derive the Band explicitly from the Grade
             # e.g., Grade "2.1" -> Band "2"
             if grade:
                 band = str(grade).split('.')[0]
                 
-            return dept, subdept, band, grade, 1.0, "scheduleA"
+            return name, entity, dept, subdept, band, grade, 1.0, "scheduleA"
             
-        return None, None, None, None, 0.0, "missing"
+        return None, None, None, None, None, None, 0.0, "missing"
 
     def _extract_salary_table(self, table_text: str):
         rows = []

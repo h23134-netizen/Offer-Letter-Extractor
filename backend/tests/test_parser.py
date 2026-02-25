@@ -162,6 +162,8 @@ def test_new_layout_extraction():
     fields = parsed["fields"]
     
     assert fields["comp_total_annual_inr"] == 1400000
+    assert fields["scheduleA_name"] == "Debayan Debnath"
+    assert fields["scheduleA_entity"] == "GFPL"
     assert fields["scheduleA_department"] == "Human Resources"
     assert fields["scheduleA_sub_department"] == "Generalist"
     assert fields["scheduleA_band"] == "2"

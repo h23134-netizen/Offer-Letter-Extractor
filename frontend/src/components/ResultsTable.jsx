@@ -66,6 +66,8 @@ export const ResultsTable = ({ results, onUpdateResult }) => {
 
     // Fields to display
     const columns = [
+        { key: 'scheduleA_name', label: 'Name' },
+        { key: 'scheduleA_entity', label: 'Entity' },
         { key: 'designation', label: 'Designation' },
         { key: 'location_city', label: 'City' },
         { key: 'location_state', label: 'State' },

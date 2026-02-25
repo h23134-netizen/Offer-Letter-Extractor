@@ -195,6 +195,8 @@ async def export_xlsx(data: Dict[str, Any] = Body(...)):
         
         row = {
             "File Name": fname,
+            "Name": fields.get("scheduleA_name"),
+            "Entity": fields.get("scheduleA_entity"),
             "Designation": fields.get("designation"),
             "City": fields.get("location_city"),
             "State": fields.get("location_state"),
